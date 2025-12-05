@@ -108,6 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
         uploadZone.classList.add('hidden');
         setTimeout(() => {
             dashboard.classList.remove('hidden');
+            document.querySelector('.app-footer').classList.remove('hidden');
         }, 300);
     }
 
