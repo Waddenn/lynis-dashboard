@@ -116,9 +116,37 @@ body {
 /* Score Section */
 .hero-section {
     display: grid;
-    grid-template-columns: 1fr 2fr;
+    grid-template-columns: 1fr 1fr 2fr;
     gap: 2rem;
     align-items: center;
+}
+
+.chart-card-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 160px;
+    width: 100%;
+}
+
+@media (max-width: 1024px) {
+    .hero-section {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .stats-grid {
+        grid-column: span 2;
+    }
+}
+
+@media (max-width: 768px) {
+    .hero-section {
+        grid-template-columns: 1fr;
+    }
+
+    .stats-grid {
+        grid-column: span 1;
+    }
 }
 
 .score-card-container {
