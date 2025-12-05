@@ -15,6 +15,53 @@ document.addEventListener('DOMContentLoaded', () => {
     scoreCircle.style.strokeDasharray = `${circumference} ${circumference}`;
     scoreCircle.style.strokeDashoffset = circumference;
 
+    // --- AI Settings & Modals ---
+    const settingsBtn = document.getElementById('settings-btn');
+    const settingsModal = document.getElementById('settings-modal');
+    const analysisModal = document.getElementById('analysis-modal');
+    const saveKeyBtn = document.getElementById('save-key-btn');
+    const apiKeyInput = document.getElementById('api-key');
+    const modelNameInput = document.getElementById('model-name');
+    const closeButtons = document.querySelectorAll('.close-modal');
+
+    // Load saved settings
+    const savedKey = localStorage.getItem('gemini_api_key');
+    if (savedKey) apiKeyInput.value = savedKey;
+
+    const savedModel = localStorage.getItem('gemini_model');
+    if (savedModel) modelNameInput.value = savedModel;
+
+    settingsBtn.addEventListener('click', () => {
+        settingsModal.classList.remove('hidden');
+    });
+
+    closeButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            settingsModal.classList.add('hidden');
+            analysisModal.classList.add('hidden');
+        });
+    });
+
+    saveKeyBtn.addEventListener('click', () => {
+        const key = apiKeyInput.value.trim();
+        const model = modelNameInput.value.trim() || 'gemini-1.5-flash';
+
+        if (key) {
+            localStorage.setItem('gemini_api_key', key);
+            localStorage.setItem('gemini_model', model);
+            alert('Settings saved!');
+            settingsModal.classList.add('hidden');
+        } else {
+            alert('Please enter a valid API key.');
+        }
+    });
+
+    // Close on outside click
+    window.addEventListener('click', (e) => {
+        if (e.target === settingsModal) settingsModal.classList.add('hidden');
+        if (e.target === analysisModal) analysisModal.classList.add('hidden');
+    });
+
     function setScore(percent) {
         const offset = circumference - (percent / 100) * circumference;
         scoreCircle.style.strokeDashoffset = offset;
@@ -221,8 +268,8 @@ document.addEventListener('DOMContentLoaded', () => {
             ${data.systemInfo.hostname || 'Localhost'}
         `;
 
-        renderList('warnings-panel', data.warnings, 'warning');
-        renderList('suggestions-panel', data.suggestions, 'suggestion');
+        renderList('warnings-panel', data.warnings, 'warning', data.systemInfo);
+        renderList('suggestions-panel', data.suggestions, 'suggestion', data.systemInfo);
         renderChart(data);
 
         const sysGrid = document.getElementById('system-grid');
@@ -288,7 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function renderList(elementId, items, type) {
+    function renderList(elementId, items, type, systemInfo) {
         const pan = document.getElementById(elementId);
         if (items.length === 0) {
             pan.innerHTML = `<div class="empty-state">No ${type}s found.</div>`;
@@ -312,6 +359,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span class="finding-details">
                             Test ID: <a href="https://cisofy.com/lynis/controls/${item.test}/" target="_blank">${item.test}</a>
                         </span>
+                        <button class="ai-btn" onclick="analyzeFinding('${item.msg.replace(/'/g, "\\'")}', '${item.test}', '${item.category}', '${(systemInfo?.os_name || 'Linux').replace(/'/g, "\\'")}')">
+                            <i data-lucide="sparkles"></i> Analyze with Gemini
+                        </button>
                     </div>
                 </div>
             `;
@@ -370,5 +420,99 @@ finish=true
         parseReport(demoReport);
         showDashboard();
     }
+
+    // --- AI Logic ---
+    const analysisLoader = document.createElement('div');
+    analysisLoader.className = 'loading-spinner';
+    analysisLoader.innerHTML = '<i data-lucide="loader-2" class="spin"></i> Analyzing...';
+
+    window.analyzeFinding = async function (msg, testId, category, osName) {
+        const apiKey = localStorage.getItem('gemini_api_key');
+        if (!apiKey) {
+            document.getElementById('settings-btn').click();
+            alert('Please authorize Gemini first (Enter API Key).');
+            return;
+        }
+
+        const modal = document.getElementById('analysis-modal');
+        const content = document.getElementById('analysis-content');
+
+        // Clear previous content
+        content.innerHTML = '';
+        analysisLoader.classList.remove('hidden');
+        content.appendChild(analysisLoader);
+
+        modal.classList.remove('hidden');
+
+        const prompt = `
+        As a Security Expert, provide a QUICK fix for this Lynis finding on ${osName}:
+        "${msg}" (Test: ${testId})
+        
+        Rules:
+        1. MAX 2 sentences for explanation.
+        2. Provide ONLY the specific command to fix/check.
+        3. No intro/outro. Keep it short.
+        Format: Markdown.`;
+
+        try {
+            const model = localStorage.getItem('gemini_model') || 'gemini-1.5-flash';
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }]
+                })
+            });
+
+            const data = await response.json();
+
+            // Remove spinner completely
+            if (content.contains(analysisLoader)) {
+                content.removeChild(analysisLoader);
+            }
+
+            if (data.error) {
+                content.innerHTML = `<div class="ai-response text-danger"><strong>Error:</strong> ${data.error.message}</div>`;
+            } else {
+                const text = data.candidates[0].content.parts[0].text;
+                // Enhanced Markdown Parsing with Copy Button
+                let html = text
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/```([\s\S]*?)```/g, (match, code) => {
+                        return `
+                            <div class="code-block-wrapper">
+                                <pre><code>${code.trim()}</code></pre>
+                                <button class="copy-btn" onclick="copyCode(this)" title="Copy Command">
+                                    <i data-lucide="copy"></i>
+                                </button>
+                            </div>
+                        `;
+                    })
+                    .replace(/`([^`]+)`/g, '<code>$1</code>')
+                    .replace(/\n\n/g, '<br><br>')
+                    .replace(/\n/g, '<br>');
+
+                content.innerHTML = `<div class="ai-response">${html}</div>`;
+                lucide.createIcons();
+            }
+
+        } catch (e) {
+            if (content.contains(analysisLoader)) content.removeChild(analysisLoader);
+            content.innerHTML = `<div class="ai-response text-danger"><strong>Network Error:</strong> ${e.message}</div>`;
+        }
+    };
+
+    window.copyCode = function (btn) {
+        const code = btn.parentElement.querySelector('code').innerText;
+        navigator.clipboard.writeText(code).then(() => {
+            const originalIcon = btn.innerHTML;
+            btn.innerHTML = '<i data-lucide="check"></i>';
+            lucide.createIcons();
+            setTimeout(() => {
+                btn.innerHTML = originalIcon;
+                lucide.createIcons();
+            }, 2000);
+        });
+    };
 
 });

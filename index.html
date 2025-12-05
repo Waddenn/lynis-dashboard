@@ -52,8 +52,48 @@
                 <div class="meta-info" id="meta-info">
                     <!-- Populated by JS -->
                 </div>
-                <button id="reset-btn" class="btn secondary sm">New Scan</button>
+                <div class="header-actions">
+                    <button id="settings-btn" class="btn icon-only" title="Settings"><i
+                            data-lucide="settings"></i></button>
+                    <button id="reset-btn" class="btn secondary sm">New Scan</button>
+                </div>
             </header>
+
+            <!-- Settings Modal -->
+            <div id="settings-modal" class="modal hidden">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Settings</h2>
+                        <button class="close-modal"><i data-lucide="x"></i></button>
+                    </div>
+                    <div class="modal-body">
+                        <label for="api-key">Gemini API Key</label>
+                        <p class="text-sm text-secondary">Your key is stored locally in your browser.</p>
+                        <input type="password" id="api-key" placeholder="Enter your Gemini API Key">
+
+                        <label for="model-name">Model Name</label>
+                        <input type="text" id="model-name" placeholder="e.g. gemini-1.5-flash" value="gemini-1.5-flash">
+
+                        <button id="save-key-btn" class="btn primary full-width">Save Settings</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analysis Modal -->
+            <div id="analysis-modal" class="modal hidden">
+                <div class="modal-content large">
+                    <div class="modal-header">
+                        <h2><i data-lucide="sparkles" class="text-accent"></i> AI Analysis</h2>
+                        <button class="close-modal"><i data-lucide="x"></i></button>
+                    </div>
+                    <div class="modal-body" id="analysis-content">
+                        <!-- AI Content goes here -->
+                        <div class="loading-spinner hidden">
+                            <i data-lucide="loader-2" class="spin"></i> Analyzing...
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <!-- Score Section -->
             <section class="hero-section">
