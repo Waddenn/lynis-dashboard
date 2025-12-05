@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lynis Security Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <!-- Icon set -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body>
+
+    <div class="app-container">
+
+        <!-- Upload Overlay (Initial State) -->
+        <div id="upload-zone" class="upload-zone">
+            <div class="upload-content">
+                <i data-lucide="shield-check" class="brand-icon"></i>
+                <h1>Lynis Dashboard</h1>
+                <p>Drag & Drop your <code>lynis-report.dat</code> here</p>
+                <input type="file" id="file-input" accept=".dat" hidden>
+                <button id="browse-btn" class="btn primary">Browse File</button>
+            </div>
+        </div>
+
+        <!-- Main Dashboard (Hidden by default) -->
+        <main id="dashboard" class="dashboard hidden">
+
+            <header class="top-bar">
+                <div class="logo">
+                    <i data-lucide="shield"></i> <span>Lynis Report</span>
+                </div>
+                <div class="meta-info" id="meta-info">
+                    <!-- Populated by JS -->
+                </div>
+                <button id="reset-btn" class="btn secondary sm">New Scan</button>
+            </header>
+
+            <!-- Score Section -->
+            <section class="hero-section">
+                <div class="score-card-container">
+                    <div class="score-card" id="score-card">
+                        <svg class="progress-ring" width="160" height="160">
+                            <circle class="progress-ring__circle--bg" stroke="rgba(255,255,255,0.1)" stroke-width="12"
+                                fill="transparent" r="70" cx="80" cy="80" />
+                            <circle class="progress-ring__circle" stroke="#00d2ff" stroke-width="12" fill="transparent"
+                                r="70" cx="80" cy="80" />
+                        </svg>
+                        <div class="score-text">
+                            <span id="score-value">0</span>
+                            <span class="label">Hardening Index</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-item danger">
+                        <i data-lucide="alert-triangle"></i>
+                        <span class="stat-value" id="count-warnings">0</span>
+                        <span class="stat-label">Warnings</span>
+                    </div>
+                    <div class="stat-item info">
+                        <i data-lucide="lightbulb"></i>
+                        <span class="stat-value" id="count-suggestions">0</span>
+                        <span class="stat-label">Suggestions</span>
+                    </div>
+                    <div class="stat-item success">
+                        <i data-lucide="check-circle"></i>
+                        <span class="stat-value" id="count-passed">0</span>
+                        <span class="stat-label">Tests Executed</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Content Tabs -->
+            <section class="details-section">
+                <div class="tabs">
+                    <button class="tab active" data-target="warnings-panel">Warnings</button>
+                    <button class="tab" data-target="suggestions-panel">Suggestions</button>
+                    <button class="tab" data-target="system-panel">System Info</button>
+                </div>
+
+                <div class="panel active" id="warnings-panel">
+                    <div class="empty-state">No warnings found. Great job!</div>
+                    <!-- List populated by JS -->
+                </div>
+
+                <div class="panel" id="suggestions-panel">
+                    <div class="empty-state">No suggestions available.</div>
+                    <!-- List populated by JS -->
+                </div>
+
+                <div class="panel" id="system-panel">
+                    <!-- List populated by JS -->
+                    <div class="info-grid" id="system-grid"></div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+
+</html>
