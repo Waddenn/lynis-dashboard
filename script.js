@@ -423,8 +423,11 @@ finish=true
 
     // --- AI Logic ---
     const analysisLoader = document.createElement('div');
-    analysisLoader.className = 'loading-spinner';
-    analysisLoader.innerHTML = '<i data-lucide="loader-2" class="spin"></i> Analyzing...';
+    analysisLoader.className = 'ai-loader';
+    analysisLoader.innerHTML = `
+        <div class="ai-icon-pulse"><i data-lucide="sparkles"></i></div>
+        <span>Thinking<span class="typing-dots"><span>.</span><span>.</span><span>.</span></span></span>
+    `;
 
     window.analyzeFinding = async function (msg, testId, category, osName) {
         const apiKey = localStorage.getItem('gemini_api_key');
@@ -443,6 +446,7 @@ finish=true
         content.appendChild(analysisLoader);
 
         modal.classList.remove('hidden');
+        lucide.createIcons(); // For the loader icon
 
         const prompt = `
         As a Security Expert, provide a QUICK fix for this Lynis finding on ${osName}:
@@ -469,43 +473,135 @@ finish=true
             // Remove spinner completely
             if (content.contains(analysisLoader)) {
                 content.removeChild(analysisLoader);
-            }
+                const responseContainer = document.createElement('div');
+                responseContainer.className = 'ai-response';
+                content.appendChild(responseContainer);
 
-            if (data.error) {
-                content.innerHTML = `<div class="ai-response text-danger"><strong>Error:</strong> ${data.error.message}</div>`;
-            } else {
-                const text = data.candidates[0].content.parts[0].text;
-                // Enhanced Markdown Parsing with Copy Button
-                let html = text
-                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                    .replace(/```([\s\S]*?)```/g, (match, rawCode) => {
-                        // Strip language identifier (e.g., "bash\n")
-                        let code = rawCode.trim();
-                        const firstSpace = code.indexOf('\n');
-                        const potentialLang = firstSpace > -1 ? code.substring(0, firstSpace).trim() : code;
+                // --- Markdown/UI Helpers ---
+                function parseMarkdown(rawText) {
+                    return rawText
+                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/```([\s\S]*?)```/g, (match, rawCode) => {
+                            let code = rawCode.trim();
+                            const firstSpace = code.indexOf('\n');
+                            const potentialLang = firstSpace > -1 ? code.substring(0, firstSpace).trim() : code;
+                            if (['bash', 'sh', 'css', 'javascript', 'js', 'html', 'python', 'ini', 'conf'].includes(potentialLang.toLowerCase())) {
+                                code = code.substring(firstSpace).trim();
+                            }
+                            return `
+                                <div class="code-block-wrapper">
+                                    <pre><code>${code}</code></pre>
+                                    <button class="copy-btn" onclick="copyCode(this)" title="Copy Command">
+                                        <i data-lucide="copy"></i>
+                                    </button>
+                                </div>
+                            `;
+                        })
+                        .replace(/`([^`]+)`/g, '<code>$1</code>')
+                        .replace(/\n\n/g, '<br><br>')
+                        .replace(/\n/g, '<br>');
+                }
 
-                        // Common languages list to strip
-                        if (['bash', 'sh', 'css', 'javascript', 'js', 'html', 'python', 'ini', 'conf'].includes(potentialLang.toLowerCase())) {
-                            code = code.substring(firstSpace).trim();
+                // --- Producer-Consumer Streaming ---
+                let fullTextBuffer = ''; // The complete text received so far
+                let displayedIndex = 0;  // How much we have shown
+                let isStreamComplete = false;
+
+                // Consumer: Runs every Xms to update UI
+                const typeSpeed = 20; // ms per char (smoother)
+                const renderInterval = setInterval(() => {
+                    if (displayedIndex < fullTextBuffer.length) {
+                        // Determine chunk size (speed up if behind?)
+                        // For now, linear 1-2 chars per tick
+                        const charsToAdd = Math.random() < 0.5 ? 1 : 2;
+                        displayedIndex = Math.min(displayedIndex + charsToAdd, fullTextBuffer.length);
+
+                        const textToShow = fullTextBuffer.substring(0, displayedIndex);
+                        responseContainer.innerHTML = parseMarkdown(textToShow + '▍');
+                        lucide.createIcons();
+                    } else if (isStreamComplete) {
+                        // Finished
+                        clearInterval(renderInterval);
+                        responseContainer.innerHTML = parseMarkdown(fullTextBuffer); // Remove cursor
+                        lucide.createIcons();
+                    }
+                }, typeSpeed);
+
+                try {
+                    const streamResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: prompt }] }]
+                        })
+                    });
+
+                    const reader = streamResponse.body.getReader();
+                    const decoder = new TextDecoder();
+                    let buffer = '';
+
+                    // Producer Loop
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) {
+                            isStreamComplete = true;
+                            break;
                         }
 
-                        return `
-                            <div class="code-block-wrapper">
-                                <pre><code>${code}</code></pre>
-                                <button class="copy-btn" onclick="copyCode(this)" title="Copy Command">
-                                    <i data-lucide="copy"></i>
-                                </button>
-                            </div>
-                        `;
-                    })
-                    .replace(/`([^`]+)`/g, '<code>$1</code>')
-                    .replace(/\n\n/g, '<br><br>')
-                    .replace(/\n/g, '<br>');
+                        const chunk = decoder.decode(value, { stream: true });
+                        buffer += chunk;
 
-                content.innerHTML = `<div class="ai-response">${html}</div>`;
-                lucide.createIcons();
+                        // Parse stream of JSON objects
+                        let bracketsCount = 0;
+                        let inString = false;
+                        let isEscaped = false;
+                        let start = 0;
+
+                        for (let i = 0; i < buffer.length; i++) {
+                            const char = buffer[i];
+                            if (isEscaped) { isEscaped = false; continue; }
+                            if (char === '\\') { isEscaped = true; continue; }
+                            if (char === '"') { inString = !inString; continue; }
+
+                            if (!inString) {
+                                if (char === '{') bracketsCount++;
+                                else if (char === '}') bracketsCount--;
+
+                                if (bracketsCount === 0 && char === '}') {
+                                    // Found object end
+                                    // Attempt to find start of this object
+                                    const firstBrace = buffer.indexOf('{', start);
+                                    if (firstBrace !== -1 && i > firstBrace) {
+                                        const jsonStr = buffer.substring(firstBrace, i + 1);
+                                        try {
+                                            const cleanJson = jsonStr.replace(/^,/, '').replace(/\]$/, ''); // Heuristic cleanup
+                                            const json = JSON.parse(cleanJson);
+                                            const textChunk = json.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+                                            // PUSH TO PRODUCER BUFFER
+                                            fullTextBuffer += textChunk;
+
+                                            start = i + 1;
+                                        } catch (e) {
+                                            // Swallow partial/invalid
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if (start > 0) {
+                            buffer = buffer.substring(start);
+                        }
+                    }
+
+                } catch (e) {
+                    clearInterval(renderInterval); // Stop typer
+                    if (content.contains(analysisLoader)) content.removeChild(analysisLoader);
+                    content.innerHTML += `<div class="ai-response text-danger"><strong>Stream Error:</strong> ${e.message}</div>`;
+                }
+
             }
-
         } catch (e) {
             if (content.contains(analysisLoader)) content.removeChild(analysisLoader);
             content.innerHTML = `<div class="ai-response text-danger"><strong>Network Error:</strong> ${e.message}</div>`;
