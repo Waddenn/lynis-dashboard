@@ -84,12 +84,18 @@
                 </div>
             </section>
 
-            <!-- Content Tabs -->
+            <!-- Content Tabs & Search -->
             <section class="details-section">
-                <div class="tabs">
-                    <button class="tab active" data-target="warnings-panel">Warnings</button>
-                    <button class="tab" data-target="suggestions-panel">Suggestions</button>
-                    <button class="tab" data-target="system-panel">System Info</button>
+                <div class="controls-bar">
+                    <div class="tabs">
+                        <button class="tab active" data-target="warnings-panel">Warnings</button>
+                        <button class="tab" data-target="suggestions-panel">Suggestions</button>
+                        <button class="tab" data-target="system-panel">System Info</button>
+                    </div>
+                    <div class="search-container">
+                        <i data-lucide="search" class="search-icon"></i>
+                        <input type="text" id="search-input" placeholder="Search findings (e.g. SSH, firewall)...">
+                    </div>
                 </div>
 
                 <div class="panel active" id="warnings-panel">
