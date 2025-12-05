@@ -238,4 +238,32 @@ document.addEventListener('DOMContentLoaded', () => {
         lucide.createIcons();
     }
 
+    const demoBtn = document.getElementById('demo-btn');
+
+    if (demoBtn) {
+        demoBtn.addEventListener('click', loadDemoData);
+    }
+
+    function loadDemoData() {
+        // Sample report data for demonstration
+        const demoReport = `
+report_datetime_start=2025-12-05 09:41:09
+os_name=Ubuntu Linux (Demo)
+os_version=24.04 LTS
+hostname=demo-server-prod-01
+lynis_version=3.1.6
+hardening_index=72
+suggestion[]=BOOT-5264|Harden system services (systemd)|
+suggestion[]=KRNL-5820|Disable core dump for all users|
+suggestion[]=SSH-7408|Consider hardening SSH configuration|
+suggestion[]=PHP-2372|Disable 'expose_php' in php.ini|
+warning[]=FIRE-4502|Check firewall configuration (no active rules found)|
+warning[]=HRDN-7222|Compiler found on production system|
+tests_executed=TEST-1|TEST-2|TEST-3|TEST-4|TEST-5|
+finish=true
+        `;
+        parseReport(demoReport);
+        showDashboard();
+    }
+
 });

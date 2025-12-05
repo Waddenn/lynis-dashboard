@@ -23,12 +23,15 @@
                 <i data-lucide="shield-check" class="brand-icon"></i>
                 <h1>Lynis Dashboard</h1>
                 <p>Drag & Drop your <code>lynis-report.dat</code> here</p>
+                <input type="file" id="file-input" accept=".dat" hidden>
+                <div class="button-group">
+                    <button id="browse-btn" class="btn primary">Browse File</button>
+                    <button id="demo-btn" class="btn secondary">Try Demo</button>
+                </div>
                 <div class="privacy-badge">
                     <i data-lucide="lock" class="icon-sm"></i>
                     <span>100% Client-Side. Your data never leaves this browser.</span>
                 </div>
-                <input type="file" id="file-input" accept=".dat" hidden>
-                <button id="browse-btn" class="btn primary">Browse File</button>
             </div>
         </div>
 
