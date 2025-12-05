@@ -220,11 +220,10 @@ document.addEventListener('DOMContentLoaded', () => {
             ${data.systemInfo.hostname || 'Localhost'}
         `;
 
-        // Render Lists with Grouping
         renderList('warnings-panel', data.warnings, 'warning');
         renderList('suggestions-panel', data.suggestions, 'suggestion');
+        renderChart(data);
 
-        // Render System Info
         const sysGrid = document.getElementById('system-grid');
         sysGrid.innerHTML = `
             <div class="info-card"><small>OS Name</small><strong>${data.systemInfo.os_name || 'N/A'}</strong></div>
@@ -235,6 +234,57 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
 
         lucide.createIcons();
+    }
+
+    let findingsChart = null;
+
+    function renderChart(data) {
+        const ctx = document.getElementById('findingsChart').getContext('2d');
+
+        // Aggregate categories
+        const categories = {};
+        [...data.warnings, ...data.suggestions].forEach(item => {
+            categories[item.category] = (categories[item.category] || 0) + 1;
+        });
+
+        const labels = Object.keys(categories);
+        const values = Object.values(categories);
+
+        if (findingsChart) {
+            findingsChart.destroy();
+        }
+
+        findingsChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: [
+                        '#ef4444', '#f59e0b', '#3b82f6', '#10b981', '#8b5cf6', '#ec4899'
+                    ],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false // Too clustered for small chart
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                return ` ${context.label}: ${context.raw}`;
+                            }
+                        }
+                    }
+                },
+                cutout: '70%'
+            }
+        });
     }
 
     function renderList(elementId, items, type) {
