@@ -126,6 +126,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.parseReport = parseReport; // Expose for debugging
 
+    // Search Input Listener
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => filterFindings(e.target.value));
+    }
+
     function parseReport(text) {
         try {
             const lines = text.split('\n');
@@ -136,28 +142,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 score: 0
             };
 
-            let binaryPathCount = 0;
-
             lines.forEach(line => {
                 if (!line.includes('=') || line.startsWith('#')) return;
 
-                // Handle array items like suggestion[]=...
                 if (line.includes('[]=')) {
                     const [keyPart, val] = line.split('[]=');
                     const key = keyPart.trim();
                     const value = val.trim();
 
-                    if (key === 'warning') {
-                        // format: warning[]=[test-id]|[msg]
+                    if (key === 'warning' || key === 'suggestion') {
                         const parts = value.split('|');
-                        data.warnings.push({ test: parts[0], msg: parts[1] });
-                    } else if (key === 'suggestion') {
-                        // format: suggestion[]=[test-id]|[msg]
-                        const parts = value.split('|');
-                        data.suggestions.push({ test: parts[0], msg: parts[1] });
+                        const item = {
+                            test: parts[0],
+                            msg: parts[1],
+                            category: parts[0].split('-')[0] || 'GENERAL'
+                        };
+
+                        if (key === 'warning') data.warnings.push(item);
+                        else data.suggestions.push(item);
                     }
                 } else {
-                    // simple key=value
                     const [key, ...rest] = line.split('=');
                     const value = rest.join('=').trim();
 
@@ -166,12 +170,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else if (['os_name', 'os_version', 'hostname', 'lynis_version', 'report_datetime_start'].includes(key)) {
                         data.systemInfo[key] = value;
                     } else if (key === 'tests_executed') {
-                        // Value is pipe-separated list of test IDs
                         const tests = value.split('|').filter(t => t.trim().length > 0);
                         data.testCount = tests.length;
                     }
                 }
             });
+
+            // Sort by category
+            data.warnings.sort((a, b) => a.category.localeCompare(b.category));
+            data.suggestions.sort((a, b) => a.category.localeCompare(b.category));
 
             renderData(data);
         } catch (e) {
@@ -181,48 +188,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderData(data) {
-        // Render Score
-        setScore(data.score || 0); // Default to 0 if not found (Lynis sometimes calculates later, usually in hardening_index)
+        setScore(data.score || 0);
 
-        // Stats
         document.getElementById('count-warnings').textContent = data.warnings.length;
         document.getElementById('count-suggestions').textContent = data.suggestions.length;
         document.getElementById('count-passed').textContent = data.testCount || '-';
 
-        // Meta Info
         const meta = document.getElementById('meta-info');
         meta.innerHTML = `
             ${data.systemInfo.report_datetime_start || 'Unknown Date'} | 
             ${data.systemInfo.hostname || 'Localhost'}
         `;
 
-        // Render Warnings
-        const warningsPanel = document.getElementById('warnings-panel');
-        if (data.warnings.length > 0) {
-            warningsPanel.innerHTML = data.warnings.map(w => `
-                <div class="finding-item warning">
-                    <div class="icon"><i data-lucide="alert-triangle"></i></div>
-                    <div class="finding-content">
-                        <h4>${w.msg}</h4>
-                        <span class="finding-details">Test ID: ${w.test}</span>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // Render Suggestions
-        const suggestionsPanel = document.getElementById('suggestions-panel');
-        if (data.suggestions.length > 0) {
-            suggestionsPanel.innerHTML = data.suggestions.map(s => `
-                <div class="finding-item suggestion">
-                    <div class="icon"><i data-lucide="lightbulb"></i></div>
-                    <div class="finding-content">
-                        <h4>${s.msg}</h4>
-                        <span class="finding-details">Test ID: ${s.test}</span>
-                    </div>
-                </div>
-            `).join('');
-        }
+        // Render Lists with Grouping
+        renderList('warnings-panel', data.warnings, 'warning');
+        renderList('suggestions-panel', data.suggestions, 'suggestion');
 
         // Render System Info
         const sysGrid = document.getElementById('system-grid');
@@ -234,8 +214,62 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="info-card"><small>Scan Date</small><strong>${data.systemInfo.report_datetime_start || 'N/A'}</strong></div>
         `;
 
-        // Re-init icons for new content
         lucide.createIcons();
+    }
+
+    function renderList(elementId, items, type) {
+        const pan = document.getElementById(elementId);
+        if (items.length === 0) {
+            pan.innerHTML = `<div class="empty-state">No ${type}s found.</div>`;
+            return;
+        }
+
+        let html = '';
+        let lastCat = '';
+
+        items.forEach(item => {
+            if (item.category !== lastCat) {
+                html += `<div class="category-header">${item.category}</div>`;
+                lastCat = item.category;
+            }
+
+            html += `
+                <div class="finding-item ${type}">
+                    <div class="icon"><i data-lucide="${type === 'warning' ? 'alert-triangle' : 'lightbulb'}"></i></div>
+                    <div class="finding-content">
+                        <h4>${item.msg}</h4>
+                        <span class="finding-details">
+                            Test ID: <a href="https://cisofy.com/lynis/controls/${item.test}/" target="_blank">${item.test}</a>
+                        </span>
+                    </div>
+                </div>
+            `;
+        });
+
+        pan.innerHTML = html;
+    }
+
+    function filterFindings(query) {
+        const term = query.toLowerCase();
+        document.querySelectorAll('.finding-item').forEach(item => {
+            const text = item.textContent.toLowerCase();
+            if (text.includes(term)) {
+                item.style.display = 'flex';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+
+        // Hide headers if no children visible
+        document.querySelectorAll('.category-header').forEach(header => {
+            let next = header.nextElementSibling;
+            let hasVisible = false;
+            while (next && !next.classList.contains('category-header')) {
+                if (next.style.display !== 'none') hasVisible = true;
+                next = next.nextElementSibling;
+            }
+            header.style.display = hasVisible ? 'flex' : 'none';
+        });
     }
 
     const demoBtn = document.getElementById('demo-btn');
