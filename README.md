@@ -5,11 +5,6 @@ A modern, offline-first web dashboard for visualizing [Lynis](https://cisofy.com
 ## Features
 
 - **Drag & Drop Interface**: Easily upload your `lynis-report.dat` file.
-- **Visual Scoring & Analytics**: See your hardening index and a breakdown of findings by category (Donut Chart).
-- **Interactive Findings**: Browse warnings, suggestions, and system info with real-time grouping.
-- **Power User Features**: Real-time search (`/`) and keyboard navigation.
-- **Print-Friendly**: Generate clean PDF reports with `Ctrl + P`.
-- **Premium Design**: Dark mode with "Aurora" animation and glassmorphism.
 - **Offline & Secure**: All parsing happens locally in your browser. No data is sent to any server.
 
 ## Usage
