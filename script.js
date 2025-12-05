@@ -359,10 +359,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span class="finding-details">
                             Test ID: <a href="https://cisofy.com/lynis/controls/${item.test}/" target="_blank">${item.test}</a>
                         </span>
-                        <button class="ai-btn" onclick="analyzeFinding('${item.msg.replace(/'/g, "\\'")}', '${item.test}', '${item.category}', '${(systemInfo?.os_name || 'Linux').replace(/'/g, "\\'")}')">
-                            <i data-lucide="sparkles"></i> Analyze with Gemini
-                        </button>
                     </div>
+                    <button class="ai-btn icon-only" title="AI Quick Fix" onclick="analyzeFinding('${item.msg.replace(/'/g, "\\'")}', '${item.test}', '${item.category}', '${(systemInfo?.os_name || 'Linux').replace(/'/g, "\\'")}')">
+                        <i data-lucide="sparkles"></i>
+                    </button>
                 </div>
             `;
         });
@@ -478,10 +478,20 @@ finish=true
                 // Enhanced Markdown Parsing with Copy Button
                 let html = text
                     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                    .replace(/```([\s\S]*?)```/g, (match, code) => {
+                    .replace(/```([\s\S]*?)```/g, (match, rawCode) => {
+                        // Strip language identifier (e.g., "bash\n")
+                        let code = rawCode.trim();
+                        const firstSpace = code.indexOf('\n');
+                        const potentialLang = firstSpace > -1 ? code.substring(0, firstSpace).trim() : code;
+
+                        // Common languages list to strip
+                        if (['bash', 'sh', 'css', 'javascript', 'js', 'html', 'python', 'ini', 'conf'].includes(potentialLang.toLowerCase())) {
+                            code = code.substring(firstSpace).trim();
+                        }
+
                         return `
                             <div class="code-block-wrapper">
-                                <pre><code>${code.trim()}</code></pre>
+                                <pre><code>${code}</code></pre>
                                 <button class="copy-btn" onclick="copyCode(this)" title="Copy Command">
                                     <i data-lucide="copy"></i>
                                 </button>
