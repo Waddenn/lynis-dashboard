@@ -132,6 +132,26 @@ document.addEventListener('DOMContentLoaded', () => {
         searchInput.addEventListener('input', (e) => filterFindings(e.target.value));
     }
 
+    // Keyboard Shortcuts
+    document.addEventListener('keydown', (e) => {
+        // Press '/' to focus search
+        if (e.key === '/' && document.activeElement !== searchInput) {
+            e.preventDefault();
+            searchInput?.focus();
+        }
+
+        // Press 'Esc' to clear search
+        if (e.key === 'Escape') {
+            if (document.activeElement === searchInput) {
+                searchInput.blur();
+            }
+            if (searchInput && searchInput.value !== '') {
+                searchInput.value = '';
+                filterFindings('');
+            }
+        }
+    });
+
     function parseReport(text) {
         try {
             const lines = text.split('\n');
