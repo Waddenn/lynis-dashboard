@@ -400,3 +400,84 @@ body {
     width: 16px;
     height: 16px;
 }
+/* Print / PDF Styling */
+@media print {
+    body {
+        background-color: white;
+        color: #1e293b; /* Dark slate for high contrast text */
+        display: block;
+    }
+
+    .upload-zone, 
+    .btn, 
+    .tabs, 
+    #reset-btn,
+    .privacy-badge,
+    .button-group {
+        display: none !important;
+    }
+
+    .app-container {
+        padding: 0;
+        overflow: visible;
+    }
+
+    .dashboard {
+        display: block !important;
+        opacity: 1 !important;
+        max-width: 100%;
+    }
+
+    .details-section {
+        background: transparent;
+        border: none;
+        overflow: visible;
+    }
+
+    .panel {
+        display: block !important;
+        opacity: 1 !important;
+        margin-bottom: 2rem;
+        page-break-inside: avoid;
+    }
+
+    .panel::before {
+        content: attr(id); /* Make tab name visible as header if possible, or just rely on content */
+        display: block;
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        text-transform: capitalize;
+        border-bottom: 2px solid #ccc;
+    }
+
+    /* Override specific panel IDs for nicer headers */
+    #warnings-panel::before { content: "Warnings"; color: #ef4444; }
+    #suggestions-panel::before { content: "Suggestions"; color: #f59e0b; }
+    #system-panel::before { content: "System Information"; color: #0f172a; }
+
+    .score-card {
+        margin: 0 auto;
+        page-break-after: avoid;
+    }
+
+    .info-card, .finding-item, .stat-item {
+        background: white;
+        border: 1px solid #e2e8f0;
+        color: black;
+        box-shadow: none;
+    }
+
+    .info-card small, .finding-details, .stat-label {
+        color: #64748b;
+    }
+
+    /* Ensure icons are dark in print */
+    .icon, i {
+        color: #334155 !important;
+    }
+    
+    .stat-item.danger i { color: #ef4444 !important; }
+    .stat-item.warning i { color: #f59e0b !important; }
+    .stat-item.success i { color: #22c55e !important; }
+}
