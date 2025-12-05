@@ -400,17 +400,105 @@ body {
     width: 16px;
     height: 16px;
 }
+
+/* Controls Bar (Tabs + Search) */
+.controls-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 0.5rem;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.tabs {
+    background: transparent;
+    /* Override previous */
+    padding: 0;
+    flex: 1;
+    min-width: 300px;
+}
+
+.search-container {
+    position: relative;
+    flex: 0 0 300px;
+}
+
+.search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    color: var(--text-secondary);
+}
+
+#search-input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 10px 10px 10px 40px;
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+#search-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.category-header {
+    margin: 24px 0 12px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--accent);
+    font-size: 1.1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.finding-details a {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px dotted var(--accent);
+}
+
+.finding-details a:hover {
+    color: white;
+    border-bottom-style: solid;
+}
+
+@media (max-width: 768px) {
+    .controls-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .search-container {
+        flex: 1;
+    }
+}
+
 /* Print / PDF Styling */
 @media print {
     body {
         background-color: white;
-        color: #1e293b; /* Dark slate for high contrast text */
+        color: #1e293b;
+        /* Dark slate for high contrast text */
         display: block;
     }
 
-    .upload-zone, 
-    .btn, 
-    .tabs, 
+    .upload-zone,
+    .btn,
+    .tabs,
     #reset-btn,
     .privacy-badge,
     .button-group {
@@ -442,7 +530,8 @@ body {
     }
 
     .panel::before {
-        content: attr(id); /* Make tab name visible as header if possible, or just rely on content */
+        content: attr(id);
+        /* Make tab name visible as header if possible, or just rely on content */
         display: block;
         font-size: 1.5rem;
         font-weight: 700;
@@ -452,32 +541,56 @@ body {
     }
 
     /* Override specific panel IDs for nicer headers */
-    #warnings-panel::before { content: "Warnings"; color: #ef4444; }
-    #suggestions-panel::before { content: "Suggestions"; color: #f59e0b; }
-    #system-panel::before { content: "System Information"; color: #0f172a; }
+    #warnings-panel::before {
+        content: "Warnings";
+        color: #ef4444;
+    }
+
+    #suggestions-panel::before {
+        content: "Suggestions";
+        color: #f59e0b;
+    }
+
+    #system-panel::before {
+        content: "System Information";
+        color: #0f172a;
+    }
 
     .score-card {
         margin: 0 auto;
         page-break-after: avoid;
     }
 
-    .info-card, .finding-item, .stat-item {
+    .info-card,
+    .finding-item,
+    .stat-item {
         background: white;
         border: 1px solid #e2e8f0;
         color: black;
         box-shadow: none;
     }
 
-    .info-card small, .finding-details, .stat-label {
+    .info-card small,
+    .finding-details,
+    .stat-label {
         color: #64748b;
     }
 
     /* Ensure icons are dark in print */
-    .icon, i {
+    .icon,
+    i {
         color: #334155 !important;
     }
-    
-    .stat-item.danger i { color: #ef4444 !important; }
-    .stat-item.warning i { color: #f59e0b !important; }
-    .stat-item.success i { color: #22c55e !important; }
+
+    .stat-item.danger i {
+        color: #ef4444 !important;
+    }
+
+    .stat-item.warning i {
+        color: #f59e0b !important;
+    }
+
+    .stat-item.success i {
+        color: #22c55e !important;
+    }
 }
