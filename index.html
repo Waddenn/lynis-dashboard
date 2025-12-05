@@ -71,10 +71,11 @@
                         <p class="text-sm text-secondary">Your key is stored locally in your browser.</p>
                         <input type="password" id="api-key" placeholder="Enter your Gemini API Key">
 
-                        <label for="model-name">Model Name</label>
-                        <input type="text" id="model-name" placeholder="e.g. gemini-1.5-flash" value="gemini-1.5-flash">
-
-                        <button id="save-key-btn" class="btn primary full-width">Save Settings</button>
+                        <div class="form-group">
+                            <label for="model-name">Model Name (Optional)</label>
+                            <input type="text" id="model-name" placeholder="gemini-2.5-flash-lite">
+                            <small>Defaults to gemini-2.5-flash-lite if empty</small>
+                        </div> <button id="save-key-btn" class="btn primary full-width">Save Settings</button>
                     </div>
                 </div>
             </div>
